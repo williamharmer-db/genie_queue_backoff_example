@@ -155,7 +155,7 @@ class DatabricksGenieClient:
             
             # The result is a GenieMessage object
             if hasattr(result, 'attachments') and result.attachments:
-                for attachment in result.attachments:
+                for i, attachment in enumerate(result.attachments):
                     if hasattr(attachment, 'text') and attachment.text:
                         response_text += attachment.text.content + "\n"
                     elif hasattr(attachment, 'query') and attachment.query:
@@ -163,24 +163,46 @@ class DatabricksGenieClient:
                         sql_query = attachment.query.query
                         response_text += f"Generated SQL: {sql_query}\n"
                         
-                        # Fetch actual query results if statement_id is available
+                        # Fetch actual query results using Genie's built-in method
                         if hasattr(attachment.query, 'statement_id') and attachment.query.statement_id:
                             try:
-                                statement_result = self._exponential_backoff(
-                                    self.workspace_client.statement_execution.get_statement,
-                                    attachment.query.statement_id
+                                # We need conversation_id, message_id, and attachment_id for the Genie method
+                                space_id = await self.get_default_space_id()
+                                
+                                # Get message_id from the result (use message_id field, not id)
+                                message_id = getattr(result, 'message_id', None)
+                                if not message_id:
+                                    logger.warning("No message_id found in result")
+                                    response_text += f"(Unable to fetch results: No message_id)\n"
+                                    continue
+                                
+                                # Get attachment_id from the attachment
+                                attachment_id = getattr(attachment, 'attachment_id', None)
+                                if not attachment_id:
+                                    logger.warning("No attachment_id found in attachment")
+                                    response_text += f"(Unable to fetch results: No attachment_id)\n"
+                                    continue
+                                
+                                # Use Genie's built-in method to get query results
+                                query_result = self._exponential_backoff(
+                                    self.workspace_client.genie.get_message_attachment_query_result,
+                                    space_id,
+                                    conversation_id,
+                                    message_id,
+                                    attachment_id
                                 )
                                 
-                                if (hasattr(statement_result, 'result') and 
-                                    statement_result.result and 
-                                    hasattr(statement_result.result, 'data_array')):
+                                if (query_result and 
+                                    hasattr(query_result, 'statement_response') and 
+                                    query_result.statement_response and
+                                    hasattr(query_result.statement_response, 'result') and
+                                    query_result.statement_response.result and
+                                    hasattr(query_result.statement_response.result, 'data_array') and
+                                    query_result.statement_response.result.data_array):
                                     
-                                    # Format the results as a table
-                                    data_array = statement_result.result.data_array
-                                    if data_array:
-                                        response_text += "\nQuery Results:\n"
-                                        response_text += self._format_query_results(statement_result)
-                                        response_text += "\n"
+                                    response_text += "\nQuery Results:\n"
+                                    response_text += self._format_genie_query_results(query_result.statement_response)
+                                    response_text += "\n"
                                 
                             except Exception as e:
                                 logger.warning(f"Failed to fetch query results: {e}")
@@ -207,26 +229,27 @@ class DatabricksGenieClient:
             logger.error(f"Failed to send message to Genie: {e}")
             raise
     
-    def _format_query_results(self, statement_result) -> str:
-        """Format query results as a readable table"""
+    def _format_genie_query_results(self, statement_response) -> str:
+        """Format Genie query results as a readable table"""
         try:
-            if not (hasattr(statement_result, 'result') and 
-                   statement_result.result and 
-                   hasattr(statement_result.result, 'data_array')):
+            if not (hasattr(statement_response, 'result') and 
+                   statement_response.result and 
+                   hasattr(statement_response.result, 'data_array') and
+                   statement_response.result.data_array):
                 return "No results available"
             
-            data_array = statement_result.result.data_array
+            data_array = statement_response.result.data_array
             if not data_array:
                 return "No data returned"
             
-            # Get column information
+            # Get column information from the manifest
             columns = []
-            if (hasattr(statement_result, 'manifest') and 
-                statement_result.manifest and 
-                hasattr(statement_result.manifest, 'schema') and
-                statement_result.manifest.schema and
-                hasattr(statement_result.manifest.schema, 'columns')):
-                columns = [col.name for col in statement_result.manifest.schema.columns]
+            if (hasattr(statement_response, 'manifest') and 
+                statement_response.manifest and 
+                hasattr(statement_response.manifest, 'schema') and
+                statement_response.manifest.schema and
+                hasattr(statement_response.manifest.schema, 'columns')):
+                columns = [col.name for col in statement_response.manifest.schema.columns]
             
             # If no column info, use generic column names
             if not columns:
@@ -248,8 +271,9 @@ class DatabricksGenieClient:
             return formatted
             
         except Exception as e:
-            logger.error(f"Error formatting query results: {e}")
+            logger.error(f"Error formatting Genie query results: {e}")
             return f"Error formatting results: {e}"
+    
     
     async def send_conversation(
         self, 

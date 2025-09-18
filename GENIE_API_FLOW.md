@@ -84,44 +84,49 @@ result = GenieMessage(
 
 ### Step 4: Fetch Actual Query Results
 ```python
-# Use statement execution API to get the actual data
-statement_result = client.statement_execution.get_statement(
-    statement_id="01f09499-e3f7-1704-aeb7-267d963af87c"
+# Use Genie's built-in query result method to get the actual data
+query_result = client.genie.get_message_attachment_query_result(
+    space_id="your-genie-space-id",
+    conversation_id="conversation-id-from-step-2",
+    message_id=result.message_id,
+    attachment_id=result.attachments[0].attachment_id
 )
 ```
 
 **What happens:**
-- The `statement_id` from Step 3 is used to fetch the actual query results
-- This is where the real data comes from, not from the Genie response directly
-- Returns a `StatementResponse` with the actual data
+- The `message_id` and `attachment_id` from Step 3 are used to fetch the actual query results
+- This uses Genie's built-in method instead of the statement execution API
+- Returns a `GenieGetMessageQueryResultResponse` with the actual data
 
-### Step 5: Extract Data from Statement Response
+### Step 5: Extract Data from Genie Query Result Response
 ```python
-# The StatementResponse contains:
-statement_result = StatementResponse(
-    status=StatementStatus(state="SUCCEEDED"),
-    result=ResultData(
-        data_array=[
-            ["Quinoa & Kale Bowl", "2271.50"],
-            ["Vegan Pizza", "2197.25"],
-            ["Organic Chili", "2145.00"]
-        ]
-    ),
-    manifest=ResultManifest(
-        schema=ResultSchema(
-            columns=[
-                ColumnInfo(name="ProductName", type_name="STRING"),
-                ColumnInfo(name="TotalValue", type_name="DECIMAL")
+# The GenieGetMessageQueryResultResponse contains:
+query_result = GenieGetMessageQueryResultResponse(
+    statement_response=StatementResponse(
+        status=StatementStatus(state="SUCCEEDED"),
+        result=ResultData(
+            data_array=[
+                ["Quinoa & Kale Bowl", "2271.50"],
+                ["Vegan Pizza", "2197.25"],
+                ["Organic Chili", "2145.00"]
             ]
+        ),
+        manifest=ResultManifest(
+            schema=ResultSchema(
+                columns=[
+                    ColumnInfo(name="ProductName", type_name="STRING"),
+                    ColumnInfo(name="TotalValue", type_name="DECIMAL")
+                ]
+            )
         )
     )
 )
 ```
 
 **What happens:**
-- `statement_result.result.data_array` = The actual query results as array of arrays
-- `statement_result.manifest.schema.columns` = Column metadata (names, types)
-- `statement_result.status.state` = Execution status ("SUCCEEDED", "FAILED", etc.)
+- `query_result.statement_response.result.data_array` = The actual query results as array of arrays
+- `query_result.statement_response.manifest.schema.columns` = Column metadata (names, types)
+- `query_result.statement_response.status.state` = Execution status ("SUCCEEDED", "FAILED", etc.)
 
 ### Step 6: Format Results for User
 ```python
@@ -150,15 +155,15 @@ Quinoa & Kale Bowl |     2271.50
 
 ### Critical Understanding
 - **Genie generates SQL** but doesn't return the actual data in the response
-- **Statement execution API** is required to get the actual query results
-- **Two-step process**: Genie conversation → Statement execution
+- **Genie's built-in query result method** is required to get the actual query results
+- **Two-step process**: Genie conversation → Genie query result retrieval
 - **Rate limiting** is essential for production use
 
 ### Common Pitfalls to Avoid
 1. ❌ **Don't look for data in `result.content`** - that's the user's question
 2. ❌ **Don't use serving endpoints** - use Genie SDK with `space_id`
 3. ❌ **Don't ignore rate limiting** - implement proper backoff strategies
-4. ❌ **Don't skip statement execution** - that's where the actual data is
+4. ❌ **Don't skip query result retrieval** - that's where the actual data is
 
 ## 🛠️ Implementation in Our Solution
 
@@ -209,7 +214,7 @@ User: "Which products generate the highest total sales value?"
 ### Step-by-Step Execution
 1. **Genie SDK Call**: `client.genie.start_conversation_and_wait(space_id, message)`
 2. **SQL Generation**: `SELECT ProductName, TotalValue FROM table ORDER BY TotalValue DESC LIMIT 5`
-3. **Statement Execution**: `client.statement_execution.get_statement(statement_id)`
+3. **Query Result Retrieval**: `client.genie.get_message_attachment_query_result(space_id, conversation_id, message_id, attachment_id)`
 4. **Data Extraction**: `[["Quinoa & Kale Bowl", "2271.50"], ["Vegan Pizza", "2197.25"]]`
 5. **Formatting**: Convert to readable table
 6. **Response Assembly**: Combine SQL + formatted results
@@ -231,7 +236,7 @@ Quinoa & Kale Bowl |     2271.50
 Our solution provides a **complete, production-ready implementation** that:
 
 - ✅ Uses the proper Genie SDK with `space_id`
-- ✅ Fetches actual query results via statement execution API
+- ✅ Fetches actual query results via Genie's built-in query result method
 - ✅ Implements robust rate limiting with exponential backoff
 - ✅ Queues requests to prevent API overload
 - ✅ Formats results as readable tables

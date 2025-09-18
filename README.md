@@ -8,7 +8,7 @@ A clean, production-ready solution for interacting with Databricks Genie using t
 - **Request Queuing**: Asynchronous processing with worker threads
 - **Formatted Output**: Readable table formatting for query results
 - **Proper Genie SDK Integration**: Uses the python SDK for interaction with the Genie API
-- **Query Result Retrieval**: Fetches data via statement execution API for more stable API approach
+- **Query Result Retrieval**: Fetches actual query results using Genie's built-in query result API
 
 ## 🚀 Quick Start
 
@@ -89,8 +89,8 @@ genie_conversation_api/
 The solution demonstrates the complete data flow:
 
 1. **User asks question** → Genie generates SQL
-2. **SQL executes** → Returns `statement_id`
-3. **Fetch results** → `client.statement_execution.get_statement(statement_id)`
+2. **SQL executes** → Returns `statement_id` and `attachment_id`
+3. **Fetch results** → `client.genie.get_message_attachment_query_result()`
 4. **Format output** → Readable table with data
 
 ### Example Output
@@ -163,14 +163,17 @@ asyncio.run(main())
 
 ### Query Result Retrieval
 ```python
-# Get statement_id from Genie response
-statement_id = result.attachments[0].query.statement_id
+# Get message_id and attachment_id from Genie response
+message_id = result.message_id
+attachment_id = result.attachments[0].attachment_id
 
-# Fetch actual results
-statement_result = client.statement_execution.get_statement(statement_id)
+# Fetch actual results using Genie's built-in method
+query_result = client.genie.get_message_attachment_query_result(
+    space_id, conversation_id, message_id, attachment_id
+)
 
-# Extract data
-data_array = statement_result.result.data_array
+# Extract data from statement_response
+data_array = query_result.statement_response.result.data_array
 ```
 
 ### Rate Limiting
@@ -184,7 +187,7 @@ wait_time = min(
 
 ## 🎯 What This Solves
 
-- ✅ **Proper SDK Usage**: Uses Genie SDK correctly and works around some of the unstable parts of an evolving Genie API
+- ✅ **Proper SDK Usage**: Uses Genie SDK correctly with the built-in query result retrieval method
 - ✅ **Complete Data Flow**: Gets query results, as well as SQL
 - ✅ **Production Ready**: Handles rate limiting and errors gracefully
 - ✅ **Clean Architecture**: Modular, maintainable code structure
