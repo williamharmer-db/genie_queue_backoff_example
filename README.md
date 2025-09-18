@@ -64,6 +64,11 @@ python find_genie_spaces.py
 python demo.py
 ```
 
+### 5. Test Rate Limiting (Optional)
+```bash
+python test_rate_limiting.py
+```
+
 ## 📁 Project Structure
 
 ```
@@ -74,6 +79,7 @@ genie_conversation_api/
 ├── genie_conversation.py  # High-level conversation interface
 ├── demo.py               # Clean demonstration script
 ├── find_genie_spaces.py  # Utility to find available spaces
+├── test_rate_limiting.py # Test script for rate limiting scenarios
 ├── requirements.txt      # Dependencies
 └── README.md            # This file
 ```
@@ -117,6 +123,15 @@ Quinoa & Kale Bowl |     2271.50
 - **Jitter**: Random variation to prevent thundering herd
 - **429 Detection**: Automatic retry with backoff
 - **Queue Management**: Configurable worker threads
+
+### Rate Limiting Demo
+The demo includes a section that simulates rapid requests to demonstrate:
+- **Request Queuing**: Multiple requests queued simultaneously
+- **Worker Thread Processing**: Parallel processing with rate limiting
+- **429 Handling**: Automatic retry with exponential backoff
+- **Production Scenarios**: Simulates >5 requests/minute scenarios
+
+Run `python test_rate_limiting.py` for a focused rate limiting test.
 
 ## 📊 Usage Example
 
@@ -175,8 +190,9 @@ wait_time = min(
 - ✅ **Clean Architecture**: Modular, maintainable code structure
 - ✅ **Customer Ready**: Focused, non-redundant implementation
 
-## 📚 References
+## 📖 Documentation
 
+- **[GENIE_API_FLOW.md](GENIE_API_FLOW.md)** - Detailed step-by-step explanation of the Genie API flow
 - [Databricks SDK Documentation](https://docs.databricks.com/dev-tools/sdk-python.html)
 - [Genie Conversation API](https://docs.databricks.com/gcp/en/genie/conversation-api)
 - [Statement Execution API](https://docs.databricks.com/sql/api/statement-execution.html)

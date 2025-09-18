@@ -83,6 +83,51 @@ async def main():
             # Small delay between questions
             await asyncio.sleep(1)
         
+        # Demo rate limiting and queuing
+        print(f"\n🚀 Rate Limiting Demo - Queuing Multiple Requests")
+        print("=" * 60)
+        print("💡 This simulates a scenario where you send multiple requests quickly")
+        print("   (In production, >5 requests/minute may trigger 429 rate limiting)")
+        
+        # Create multiple questions to demonstrate queuing
+        rapid_questions = [
+            "What is the total revenue?",
+            "Which region has the highest sales?",
+            "What is the most popular product category?",
+            "How many orders were placed last month?",
+            "What is the average order size?",
+            "Which customer segment is most valuable?",
+            "What is the profit margin by product?",
+            "How has sales performance changed over time?"
+        ]
+        
+        print(f"\n📤 Queuing {len(rapid_questions)} requests rapidly...")
+        
+        # Queue all requests quickly (this will demonstrate the queuing system)
+        request_ids = []
+        for i, question in enumerate(rapid_questions, 1):
+            print(f"   📤 Queuing request {i}: {question[:50]}...")
+            request_id = await manager.send_message(conversation_id, question)
+            request_ids.append(request_id)
+        
+        print(f"\n⏳ Processing {len(request_ids)} queued requests...")
+        print("💡 Notice how requests are processed by worker threads with rate limiting")
+        
+        # Wait for all responses and show progress
+        completed_count = 0
+        for i, request_id in enumerate(request_ids, 1):
+            try:
+                print(f"   ⏳ Waiting for request {i}/{len(request_ids)}...")
+                response = await manager.get_response(request_id, timeout=120)
+                completed_count += 1
+                print(f"   ✅ Completed {completed_count}/{len(request_ids)}: {response.message[:100]}...")
+                
+            except Exception as e:
+                print(f"   ❌ Request {i} failed: {e}")
+        
+        print(f"\n🎉 Rate limiting demo completed!")
+        print(f"   📊 Successfully processed {completed_count}/{len(request_ids)} requests")
+        
         # Show queue statistics
         stats = manager.get_queue_stats()
         print(f"\n📊 Queue Statistics:")
@@ -95,8 +140,9 @@ async def main():
         print(f"   - Genie SDK integration with space_id")
         print(f"   - SQL query generation and execution")
         print(f"   - Statement execution API for results")
-        print(f"   - Rate limiting with exponential backoff")
+        print(f"   - Rate limiting with exponential backoff (429 handling)")
         print(f"   - Request queuing with worker threads")
+        print(f"   - Production-ready error handling and retry logic")
         
     except Exception as e:
         print(f"❌ Demo failed: {e}")
