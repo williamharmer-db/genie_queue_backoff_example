@@ -4,11 +4,11 @@ A clean, production-ready solution for interacting with Databricks Genie using t
 
 ## 🎯 Key Features
 
-- **Proper Genie SDK Integration**: Uses `space_id` instead of serving endpoints
-- **Query Result Retrieval**: Fetches actual data via statement execution API
 - **Rate Limiting**: Exponential backoff for 429 responses
 - **Request Queuing**: Asynchronous processing with worker threads
 - **Formatted Output**: Readable table formatting for query results
+- **Proper Genie SDK Integration**: Uses the python SDK for interaction with the Genie API
+- **Query Result Retrieval**: Fetches data via statement execution API for more stable API approach
 
 ## 🚀 Quick Start
 
@@ -169,8 +169,8 @@ wait_time = min(
 
 ## 🎯 What This Solves
 
-- ✅ **Proper SDK Usage**: Uses Genie SDK correctly with `space_id`
-- ✅ **Complete Data Flow**: Gets actual query results, not just SQL
+- ✅ **Proper SDK Usage**: Uses Genie SDK correctly and works around some of the unstable parts of an evolving Genie API
+- ✅ **Complete Data Flow**: Gets query results, as well as SQL
 - ✅ **Production Ready**: Handles rate limiting and errors gracefully
 - ✅ **Clean Architecture**: Modular, maintainable code structure
 - ✅ **Customer Ready**: Focused, non-redundant implementation
