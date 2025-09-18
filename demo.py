@@ -15,7 +15,28 @@ Key Features:
 
 import asyncio
 import os
+import re
 from genie_conversation import GenieConversationManager
+
+
+def _extract_results_from_response(response_content: str) -> str:
+    """Extract just the meaningful results from assistant response, not the SQL query"""
+    # Look for "Query Results:" section
+    if "Query Results:" in response_content:
+        # Extract everything after "Query Results:"
+        results_section = response_content.split("Query Results:")[1]
+        # Remove any trailing SQL query parts
+        results_section = results_section.split("Generated SQL:")[0]
+        return results_section.strip()
+    
+    # If no query results, look for other meaningful content
+    # Remove "Generated SQL:" sections
+    content = re.sub(r'Generated SQL:.*?(?=\n\n|\nQuery Results:|$)', '', response_content, flags=re.DOTALL)
+    
+    # Clean up extra whitespace
+    content = re.sub(r'\n\s*\n', '\n', content).strip()
+    
+    return content if content else "No results available"
 
 
 async def main():
@@ -50,6 +71,11 @@ async def main():
     
     try:
         await manager.initialize()
+        
+        # Clear any existing conversations to avoid ownership issues
+        if manager.client:
+            manager.client.clear_conversations()
+        
         conversation_id = await manager.start_conversation()
         
         print(f"\n💬 Started conversation: {conversation_id}")
@@ -60,7 +86,7 @@ async def main():
             "Show me the top 3 retailers by total sales", 
             "What is the average order value?",
             "How many different products do we have?",
-            "Can you show me more details about the top product from the first question?",
+            "Can you show me more pricing details about the top product from the first question?",
             "What about the second highest product?",
             "How do these top products compare in terms of sales?"
         ]
@@ -148,7 +174,15 @@ async def main():
         history = manager.get_conversation_history(conversation_id)
         for i, msg in enumerate(history, 1):
             role_emoji = "👤" if msg.role == "user" else "🤖"
-            print(f"{i}. {role_emoji} {msg.role.title()}: {msg.content[:100]}...")
+            
+            if msg.role == "assistant":
+                # For assistant messages, show just the results, not the SQL query
+                display_content = _extract_results_from_response(msg.content)
+            else:
+                # For user messages, show the full question
+                display_content = msg.content
+            
+            print(f"{i}. {role_emoji} {msg.role.title()}: {display_content[:100]}...")
         
         print(f"\n✅ Demo completed successfully!")
         print(f"💡 This demonstrates:")

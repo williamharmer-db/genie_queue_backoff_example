@@ -57,6 +57,11 @@ class DatabricksGenieClient:
         """Async context manager exit"""
         pass
     
+    def clear_conversations(self):
+        """Clear the conversation cache to avoid ownership issues"""
+        self._conversations.clear()
+        logger.info("Cleared conversation cache")
+    
     def _exponential_backoff(self, func, *args, max_retries: int = None, base_delay: float = None, **kwargs):
         """Execute function with exponential backoff for rate limiting"""
         max_retries = max_retries or settings.max_retries
@@ -80,7 +85,7 @@ class DatabricksGenieClient:
                     time.sleep(wait_time)
                     retries += 1
                 else:
-                    # For other errors (like PermissionDenied), don't retry
+                    # For other errors (like PermissionDenied, conversation ownership), don't retry
                     raise
         raise Exception(f"Max retries ({max_retries}) exceeded for function {func.__name__}")
     
@@ -122,7 +127,7 @@ class DatabricksGenieClient:
     ) -> ConversationResponse:
         """Send a message to Genie and get response"""
         try:
-            if conversation_id:
+            if conversation_id and conversation_id in self._conversations:
                 # Continue existing conversation - Genie maintains context automatically
                 space_id = await self.get_default_space_id()
                 result = self._exponential_backoff(
