@@ -233,7 +233,7 @@ Quinoa & Kale Bowl |     2271.50
 
 ## 🎯 Summary
 
-Our solution provides a **complete, production-ready implementation** that:
+Our solution provides a **complete implementation** that:
 
 - ✅ Uses the proper Genie SDK with `space_id`
 - ✅ Fetches actual query results via Genie's built-in query result method
@@ -243,4 +243,4 @@ Our solution provides a **complete, production-ready implementation** that:
 - ✅ Handles errors gracefully
 - ✅ Provides comprehensive logging and monitoring
 
-This approach ensures reliable, scalable interaction with Databricks Genie in production environments.
+This approach ensures reliable, scalable interaction with Databricks Genie.

@@ -1,6 +1,6 @@
 # Databricks Genie Conversation API
 
-A clean, production-ready solution for interacting with Databricks Genie using the SDK with proper rate limiting and query result retrieval.
+A clean solution for interacting with Databricks Genie using the SDK with proper rate limiting and query result retrieval.
 
 ## 🎯 Key Features
 
@@ -189,7 +189,7 @@ wait_time = min(
 
 - ✅ **Proper SDK Usage**: Uses Genie SDK correctly with the built-in query result retrieval method
 - ✅ **Complete Data Flow**: Gets query results, as well as SQL
-- ✅ **Production Ready**: Handles rate limiting and errors gracefully
+- ✅ **Robust Error Handling**: Handles rate limiting and errors gracefully
 - ✅ **Clean Architecture**: Modular, maintainable code structure
 - ✅ **Customer Ready**: Focused, non-redundant implementation
 

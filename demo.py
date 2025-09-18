@@ -261,7 +261,7 @@ async def main():
         if choice == '2':
             print(f"   - Rate limiting with exponential backoff (429 handling)")
             print(f"   - Request queuing with worker threads")
-        print(f"   - Production-ready error handling and retry logic")
+                print(f"   - Robust error handling and retry logic")
         
     except Exception as e:
         print(f"❌ Demo failed: {e}")
