@@ -54,16 +54,23 @@ async def main():
         
         print(f"\n💬 Started conversation: {conversation_id}")
         
-        # Demo questions that will generate SQL queries
+        # Demo questions that demonstrate continued conversation context
         questions = [
             "Which products generate the highest total sales value?",
-            "Show me the top 3 retailers by total sales",
+            "Show me the top 3 retailers by total sales", 
             "What is the average order value?",
-            "How many different products do we have?"
+            "How many different products do we have?",
+            "Can you show me more details about the top product from the first question?",
+            "What about the second highest product?",
+            "How do these top products compare in terms of sales?"
         ]
         
         print(f"\n📊 Running {len(questions)} demo questions...")
         print("=" * 60)
+        print("💡 Notice how later questions reference previous answers (continued conversation)")
+        print("   - Questions 1-4: Initial questions to establish context")
+        print("   - Questions 5-7: Reference previous answers using conversation_id")
+        print("   - Genie maintains conversation context automatically")
         
         for i, question in enumerate(questions, 1):
             print(f"\n📝 Question {i}: {question}")
@@ -135,9 +142,18 @@ async def main():
         print(f"   - Completed requests: {stats['completed_requests']}")
         print(f"   - Worker threads: {stats['workers']}")
         
+        # Show conversation history
+        print(f"\n📚 Conversation History:")
+        print("=" * 60)
+        history = manager.get_conversation_history(conversation_id)
+        for i, msg in enumerate(history, 1):
+            role_emoji = "👤" if msg.role == "user" else "🤖"
+            print(f"{i}. {role_emoji} {msg.role.title()}: {msg.content[:100]}...")
+        
         print(f"\n✅ Demo completed successfully!")
         print(f"💡 This demonstrates:")
         print(f"   - Genie SDK integration with space_id")
+        print(f"   - Continued conversation context (conversation_id)")
         print(f"   - SQL query generation and execution")
         print(f"   - Statement execution API for results")
         print(f"   - Rate limiting with exponential backoff (429 handling)")

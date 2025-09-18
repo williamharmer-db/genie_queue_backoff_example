@@ -39,6 +39,24 @@ result = client.genie.start_conversation_and_wait(
 - Genie generates appropriate SQL query
 - SQL query is executed automatically
 - Genie returns a `GenieMessage` object with results
+- **Important**: The result contains a `conversation_id` for continued conversations
+
+### Step 2.5: Continue Conversation
+```python
+# Continue existing conversation using conversation_id
+result = client.genie.create_message_and_wait(
+    space_id="your-genie-space-id",
+    conversation_id="conversation-id-from-step-2",
+    content="What about the top 3 products?"
+)
+```
+
+**What happens:**
+- Genie receives the new message with the existing `conversation_id`
+- Genie automatically maintains context from previous messages
+- Genie understands references like "top 3 products" in context of previous results
+- Genie generates appropriate follow-up SQL query
+- Genie returns results that build on previous conversation
 
 ### Step 3: Extract Response Structure
 ```python

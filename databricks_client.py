@@ -67,7 +67,8 @@ class DatabricksGenieClient:
             try:
                 return func(*args, **kwargs)
             except DatabricksError as e:
-                if e.http_status_code == 429:
+                # Check if it's a rate limit error (429)
+                if hasattr(e, 'http_status_code') and e.http_status_code == 429:
                     wait_time = min(
                         base_delay * (settings.backoff_multiplier ** retries),
                         settings.max_backoff
@@ -79,6 +80,7 @@ class DatabricksGenieClient:
                     time.sleep(wait_time)
                     retries += 1
                 else:
+                    # For other errors (like PermissionDenied), don't retry
                     raise
         raise Exception(f"Max retries ({max_retries}) exceeded for function {func.__name__}")
     
@@ -120,11 +122,12 @@ class DatabricksGenieClient:
     ) -> ConversationResponse:
         """Send a message to Genie and get response"""
         try:
-            if conversation_id and conversation_id in self._conversations:
-                # Continue existing conversation
-                conversation = self._conversations[conversation_id]
+            if conversation_id:
+                # Continue existing conversation - Genie maintains context automatically
+                space_id = await self.get_default_space_id()
                 result = self._exponential_backoff(
-                    self.workspace_client.genie.continue_conversation_and_wait,
+                    self.workspace_client.genie.create_message_and_wait,
+                    space_id,
                     conversation_id,
                     message
                 )
@@ -250,7 +253,6 @@ class DatabricksGenieClient:
         **kwargs
     ) -> ConversationResponse:
         """Send a full conversation to Genie"""
-        # For Genie, we'll send the last user message and let it handle context
         if not messages:
             raise ValueError("No messages provided")
         
@@ -264,6 +266,8 @@ class DatabricksGenieClient:
         if not last_user_message:
             raise ValueError("No user message found in conversation")
         
+        # For continued conversations, Genie maintains context automatically
+        # We just need to send the new message with the conversation_id
         return await self.send_message(last_user_message, conversation_id, **kwargs)
     
     async def stream_conversation(
